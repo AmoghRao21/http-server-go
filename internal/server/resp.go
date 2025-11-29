@@ -15,10 +15,14 @@ var rt = newRouter()
 func init() {
 	rt.add("GET", "/", hRoot)
 	rt.add("GET", "/echo", hEcho)
+
 	rt.add("POST", "/data", chain(hDataPost, authMw))
 	rt.add("GET", "/data", chain(hDataGetAll, authMw))
 	rt.add("GET", "/data/:id", chain(hDataGetOne, authMw))
 	rt.add("PUT", "/data/:id", chain(hDataPut, authMw))
+	rt.add("DELETE", "/data/:id", chain(hDataDelete, authMw))
+	rt.add("PATCH", "/data/:id", chain(hDataPatch, authMw))
+
 	rt.add("GET", "/static/:file", hStatic)
 }
 

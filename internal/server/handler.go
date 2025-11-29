@@ -85,3 +85,51 @@ func hStatic(req *Req) (int, []byte, string) {
 
 	return 200, data, mime(fp)
 }
+
+func hDataDelete(req *Req) (int, []byte, string) {
+	idStr := req.Path[len("/data/"):]
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		return 400, []byte("bad id"), "text/plain"
+	}
+	ok := st.del(id)
+	if !ok {
+		return 404, []byte("not found"), "text/plain"
+	}
+	return 200, []byte("deleted"), "text/plain"
+}
+
+func hDataPatch(req *Req) (int, []byte, string) {
+	idStr := req.Path[len("/data/"):]
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		return 400, []byte("bad id"), "text/plain"
+	}
+
+	var incoming map[string]interface{}
+	err = parseJSON(req.Body, &incoming)
+	if err != nil {
+		return 400, []byte("bad json"), "text/plain"
+	}
+
+	it, ok := st.get(id)
+	if !ok {
+		return 404, []byte("not found"), "text/plain"
+	}
+
+	existing, ok := it.Data.(map[string]interface{})
+	if !ok {
+		return 400, []byte("not object"), "text/plain"
+	}
+
+	for k, v := range incoming {
+		existing[k] = v
+	}
+
+	upd, ok := st.update(id, existing)
+	if !ok {
+		return 500, []byte("update failed"), "text/plain"
+	}
+
+	return 200, toJSON(upd), "application/json"
+}
