@@ -13,6 +13,7 @@ type Req struct {
 	Ver    string
 	Hdr    map[string]string
 	Body   []byte
+	Query  map[string]string
 }
 
 func rdReq(r io.Reader) (*Req, error) {
@@ -60,11 +61,34 @@ func rdReq(r io.Reader) (*Req, error) {
 		}
 	}
 
+	qp := map[string]string{}
+	fullPath := lineParts[1]
+
+	pathOnly := fullPath
+	if idx := strings.IndexByte(fullPath, '?'); idx >= 0 {
+		raw := fullPath[idx+1:]
+		pathOnly = fullPath[:idx]
+		for _, part := range strings.Split(raw, "&") {
+			if part == "" {
+				continue
+			}
+			kv := strings.SplitN(part, "=", 2)
+			k := kv[0]
+			v := ""
+			if len(kv) > 1 {
+				v = kv[1]
+			}
+			qp[k] = v
+		}
+	}
+
 	return &Req{
 		Method: lineParts[0],
-		Path:   lineParts[1],
+		Path:   pathOnly,
 		Ver:    lineParts[2],
 		Hdr:    hdrMap,
 		Body:   bodyBuf,
+		Query:  qp,
 	}, nil
+
 }

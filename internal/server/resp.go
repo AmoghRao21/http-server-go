@@ -12,6 +12,7 @@ var rt = newRouter()
 
 func init() {
 	rt.add("GET", "/", hRoot)
+	rt.add("GET", "/echo", hEcho)
 }
 
 func wr(conn net.Conn, req *Req) {
