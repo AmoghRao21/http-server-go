@@ -43,3 +43,28 @@ func (s *Store) get(id int) (Item, bool) {
 	s.mu.Unlock()
 	return Item{}, false
 }
+
+func (s *Store) update(id int, v interface{}) (Item, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for i, it := range s.items {
+		if it.ID == id {
+			it.Data = v
+			s.items[i] = it
+			return it, true
+		}
+	}
+	return Item{}, false
+}
+
+func (s *Store) del(id int) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for i, it := range s.items {
+		if it.ID == id {
+			s.items = append(s.items[:i], s.items[i+1:]...)
+			return true
+		}
+	}
+	return false
+}
