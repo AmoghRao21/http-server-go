@@ -2,10 +2,15 @@ package server
 
 import (
 	"bufio"
+	"errors"
 	"io"
 	"strconv"
 	"strings"
 )
+
+const maxBodySize = 1 << 20
+
+var errTooLarge = errors.New("body too large")
 
 type Req struct {
 	Method string
@@ -51,19 +56,8 @@ func rdReq(r io.Reader) (*Req, error) {
 		hdrMap[strings.ToLower(hdrKey)] = hdrVal
 	}
 
-	var bodyBuf []byte
-	contentLenStr, hasLen := hdrMap["content-length"]
-	if hasLen {
-		size, _ := strconv.Atoi(contentLenStr)
-		if size > 0 {
-			bodyBuf = make([]byte, size)
-			io.ReadFull(reader, bodyBuf)
-		}
-	}
-
 	qp := map[string]string{}
 	fullPath := lineParts[1]
-
 	pathOnly := fullPath
 	if idx := strings.IndexByte(fullPath, '?'); idx >= 0 {
 		raw := fullPath[idx+1:]
@@ -82,6 +76,32 @@ func rdReq(r io.Reader) (*Req, error) {
 		}
 	}
 
+	var bodyBuf []byte
+	contentLenStr, hasLen := hdrMap["content-length"]
+	if hasLen {
+		size, _ := strconv.Atoi(contentLenStr)
+		if size > maxBodySize {
+			remain := size
+			tmp := make([]byte, 4096)
+			for remain > 0 {
+				chunk := 4096
+				if remain < chunk {
+					chunk = remain
+				}
+				_, readErr := io.ReadFull(reader, tmp[:chunk])
+				if readErr != nil {
+					break
+				}
+				remain -= chunk
+			}
+			return nil, errTooLarge
+		}
+		if size > 0 {
+			bodyBuf = make([]byte, size)
+			io.ReadFull(reader, bodyBuf)
+		}
+	}
+
 	return &Req{
 		Method: lineParts[0],
 		Path:   pathOnly,
@@ -90,5 +110,4 @@ func rdReq(r io.Reader) (*Req, error) {
 		Body:   bodyBuf,
 		Query:  qp,
 	}, nil
-
 }

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"log"
 	"net"
 )
@@ -28,28 +29,26 @@ func (srv *Srv) Run() error {
 			log.Println("accept err:", err)
 			continue
 		}
-		go func(conn net.Conn) {
-			defer conn.Close()
-			req, perr := rdReq(conn)
-			if perr != nil {
-				return
-			}
-			wr(conn, req)
-		}(conn)
+		go handleConn(conn)
 	}
 }
 
-func statusText(code int) string {
-	switch code {
-	case 200:
-		return "OK"
-	case 400:
-		return "Bad Request"
-	case 404:
-		return "Not Found"
-	case 500:
-		return "Internal Server Error"
-	default:
-		return "Status"
+func handleConn(conn net.Conn) {
+	defer conn.Close()
+
+	for {
+		req, err := rdReq(conn)
+		if err != nil {
+			if errors.Is(err, errTooLarge) {
+				writeResp(conn, 413, []byte("body too large"), "text/plain", false)
+				log.Println("POST", "/data", 413, 0)
+			}
+			return
+		}
+
+		keep := wr(conn, req)
+		if !keep {
+			return
+		}
 	}
 }
