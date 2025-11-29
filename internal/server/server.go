@@ -38,3 +38,18 @@ func (srv *Srv) Run() error {
 		}(conn)
 	}
 }
+
+func statusText(code int) string {
+	switch code {
+	case 200:
+		return "OK"
+	case 400:
+		return "Bad Request"
+	case 404:
+		return "Not Found"
+	case 500:
+		return "Internal Server Error"
+	default:
+		return "Status"
+	}
+}
