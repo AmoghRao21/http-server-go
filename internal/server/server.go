@@ -5,28 +5,36 @@ import (
 	"net"
 )
 
-type S struct {
-	A string
+type Srv struct {
+	Addr string
 }
 
-func New(a string) *S {
-	return &S{A: a}
+func New(addr string) *Srv {
+	return &Srv{Addr: addr}
 }
 
-func (s *S) Run() error {
-	ln, err := net.Listen("tcp", s.A)
+func (srv *Srv) Run() error {
+	lstn, err := net.Listen("tcp", srv.Addr)
 	if err != nil {
 		return err
 	}
+	defer lstn.Close()
 
-	defer ln.Close()
-	log.Println("listening on", s.A)
+	log.Println("listening on", srv.Addr)
+
 	for {
-		c, err := ln.Accept()
+		conn, err := lstn.Accept()
 		if err != nil {
-			log.Println("accept error:", err)
+			log.Println("accept err:", err)
 			continue
 		}
-		c.Close()
+		go func(conn net.Conn) {
+			defer conn.Close()
+			req, perr := rdReq(conn)
+			if perr != nil {
+				return
+			}
+			wr(conn, req)
+		}(conn)
 	}
 }

@@ -8,13 +8,15 @@ import (
 )
 
 func main() {
-	a := ":8080"
-	if p := os.Getenv("Port"); p != "" {
-		a = ":" + p
+	addr := ":8080"
+	portEnv := os.Getenv("PORT")
+	if portEnv != "" {
+		addr = ":" + portEnv
 	}
 
-	s := server.New(a)
-	if err := s.Run(); err != nil {
+	srv := server.New(addr)
+	err := srv.Run()
+	if err != nil {
 		log.Fatal(err)
 	}
 }
