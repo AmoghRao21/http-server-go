@@ -28,6 +28,14 @@ func (rt *Router) match(method, path string) Handler {
 		if h, ok := m[path]; ok {
 			return h
 		}
+		for p, h := range m {
+			if strings.HasSuffix(p, "/:id") {
+				base := p[:len(p)-4]
+				if strings.HasPrefix(path, base) {
+					return h
+				}
+			}
+		}
 	}
 	return nil
 }
