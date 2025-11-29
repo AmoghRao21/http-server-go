@@ -18,6 +18,7 @@ func init() {
 	rt.add("POST", "/data", hDataPost)
 	rt.add("GET", "/data", hDataGetAll)
 	rt.add("GET", "/data/:id", hDataGetOne)
+	rt.add("GET", "/static/:file", hStatic)
 }
 
 func wr(conn net.Conn, req *Req) bool {

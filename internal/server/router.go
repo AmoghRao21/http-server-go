@@ -35,6 +35,15 @@ func (rt *Router) match(method, path string) Handler {
 					return h
 				}
 			}
+			if strings.HasSuffix(p, "/:file") {
+				base := p[:len(p)-6]
+				if strings.HasPrefix(path, base) {
+					return h
+				}
+			}
+			if strings.HasPrefix(path, "/static/") && p == "/static/:file" {
+				return h
+			}
 		}
 	}
 	return nil

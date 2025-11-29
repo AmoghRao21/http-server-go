@@ -1,6 +1,11 @@
 package server
 
-import "strconv"
+import (
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+)
 
 func hRoot(req *Req) (int, []byte, string) {
 	return 200, []byte("welcome"), "text/plain"
@@ -40,4 +45,25 @@ func hDataGetOne(req *Req) (int, []byte, string) {
 		return 404, []byte("not found"), "text/plain"
 	}
 	return 200, toJSON(it), "application/json"
+}
+
+func hStatic(req *Req) (int, []byte, string) {
+	p := strings.TrimPrefix(req.Path, "/static/")
+	if p == "" {
+		return 404, []byte("not found"), "text/plain"
+	}
+
+	base := "public"
+	fp := filepath.Join(base, p)
+
+	if !strings.HasPrefix(fp, base) {
+		return 403, []byte("forbidden"), "text/plain"
+	}
+
+	data, err := os.ReadFile(fp)
+	if err != nil {
+		return 404, []byte("not found"), "text/plain"
+	}
+
+	return 200, data, mime(fp)
 }
