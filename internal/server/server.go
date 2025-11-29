@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 	"net"
+	"time"
 )
 
 type Srv struct {
@@ -29,14 +30,24 @@ func (srv *Srv) Run() error {
 			log.Println("accept err:", err)
 			continue
 		}
+
+		if tc, ok := conn.(*net.TCPConn); ok {
+			tc.SetNoDelay(true)
+			tc.SetKeepAlive(true)
+			tc.SetKeepAlivePeriod(30 * time.Second)
+		}
+
 		go handleConn(conn)
 	}
+
 }
 
 func handleConn(conn net.Conn) {
 	defer conn.Close()
 
 	for {
+		conn.SetReadDeadline(time.Now().Add(10 * time.Second))
+
 		req, err := rdReq(conn)
 		if err != nil {
 			if errors.Is(err, errTooLarge) {
@@ -50,5 +61,7 @@ func handleConn(conn net.Conn) {
 		if !keep {
 			return
 		}
+
+		conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 	}
 }
