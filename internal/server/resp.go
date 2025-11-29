@@ -84,6 +84,9 @@ func writeResp(conn net.Conn, code int, body []byte, ctype string, keep bool) {
 	hdr["Access-Control-Allow-Origin"] = "*"
 	hdr["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, PATCH, OPTIONS"
 	hdr["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+	if code == 401 {
+		hdr["WWW-Authenticate"] = `Basic realm="Secure Area"`
+	}
 
 	var buf bytes.Buffer
 	fmt.Fprintf(&buf, "HTTP/1.1 %d %s\r\n", code, statusText(code))
