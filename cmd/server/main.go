@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"os"
 
@@ -8,6 +9,10 @@ import (
 )
 
 func main() {
+	loadtest := flag.Bool("load", false, "disable logging for load tests")
+	flag.Parse()
+	server.LoadTest = *loadtest
+
 	addr := ":8080"
 	portEnv := os.Getenv("PORT")
 	if portEnv != "" {

@@ -4,45 +4,84 @@ import "strings"
 
 type Handler func(*Req) (int, []byte, string)
 
+type fastNode struct {
+	part     string
+	isWild   bool
+	handler  Handler
+	children []*fastNode
+}
+
 type Router struct {
-	routes map[string]map[string]Handler
+	roots map[string]*fastNode
 }
 
 func newRouter() *Router {
 	return &Router{
-		routes: map[string]map[string]Handler{},
+		roots: make(map[string]*fastNode),
 	}
 }
 
-func (rt *Router) add(method, path string, h Handler) {
+func (r *Router) add(method, path string, h Handler) {
 	method = strings.ToUpper(method)
-	if rt.routes[method] == nil {
-		rt.routes[method] = map[string]Handler{}
+	parts := strings.Split(path, "/")[1:]
+
+	root, ok := r.roots[method]
+	if !ok {
+		root = &fastNode{}
+		r.roots[method] = root
 	}
-	rt.routes[method][path] = h
+	insertFast(root, parts, h)
 }
 
-func (rt *Router) match(method, path string) Handler {
-	method = strings.ToUpper(method)
-	if m, ok := rt.routes[method]; ok {
-		if h, ok := m[path]; ok {
-			return h
+func insertFast(n *fastNode, parts []string, h Handler) {
+	if len(parts) == 0 {
+		n.handler = h
+		return
+	}
+	part := parts[0]
+	isWild := len(part) > 0 && part[0] == ':'
+
+	for _, c := range n.children {
+		if c.part == part || c.isWild {
+			insertFast(c, parts[1:], h)
+			return
 		}
-		for p, h := range m {
-			if strings.HasSuffix(p, "/:id") {
-				base := p[:len(p)-4]
-				if strings.HasPrefix(path, base) {
-					return h
-				}
-			}
-			if strings.HasSuffix(p, "/:file") {
-				base := p[:len(p)-6]
-				if strings.HasPrefix(path, base) {
-					return h
-				}
-			}
-			if strings.HasPrefix(path, "/static/") && p == "/static/:file" {
-				return h
+	}
+
+	child := &fastNode{
+		part:   part,
+		isWild: isWild,
+	}
+	n.children = append(n.children, child)
+	insertFast(child, parts[1:], h)
+}
+
+func (r *Router) match(method, path string) Handler {
+	method = strings.ToUpper(method)
+	root, ok := r.roots[method]
+	if !ok {
+		return nil
+	}
+	parts := strings.Split(path, "/")[1:]
+
+	n := searchFast(root, parts)
+	if n == nil {
+		return nil
+	}
+	return n.handler
+}
+
+func searchFast(n *fastNode, parts []string) *fastNode {
+	if len(parts) == 0 {
+		return n
+	}
+	part := parts[0]
+
+	for _, c := range n.children {
+		if c.part == part || c.isWild {
+			out := searchFast(c, parts[1:])
+			if out != nil {
+				return out
 			}
 		}
 	}

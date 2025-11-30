@@ -1,9 +1,13 @@
 package server
 
 import (
+	"bufio"
+	"context"
 	"errors"
+	"io"
 	"log"
 	"net"
+	"syscall"
 	"time"
 )
 
@@ -16,7 +20,17 @@ func New(addr string) *Srv {
 }
 
 func (srv *Srv) Run() error {
-	lstn, err := net.Listen("tcp", srv.Addr)
+	cfg := net.ListenConfig{
+		Control: func(network, address string, c syscall.RawConn) error {
+			var err error
+			c.Control(func(fd uintptr) {
+				applySocketOptions(fd)
+			})
+			return err
+		},
+	}
+
+	lstn, err := cfg.Listen(context.Background(), "tcp", srv.Addr)
 	if err != nil {
 		return err
 	}
@@ -30,38 +44,48 @@ func (srv *Srv) Run() error {
 			log.Println("accept err:", err)
 			continue
 		}
-
 		if tc, ok := conn.(*net.TCPConn); ok {
 			tc.SetNoDelay(true)
 			tc.SetKeepAlive(true)
 			tc.SetKeepAlivePeriod(30 * time.Second)
+			tc.SetReadBuffer(1 << 20)
+			tc.SetWriteBuffer(1 << 20)
 		}
 
 		go handleConn(conn)
 	}
-
 }
 
 func handleConn(conn net.Conn) {
 	defer conn.Close()
+	br := bufio.NewReaderSize(conn, 64*1024)
 
 	for {
-		conn.SetReadDeadline(time.Now().Add(10 * time.Second))
+		conn.SetReadDeadline(time.Now().Add(15 * time.Second))
 
-		req, err := rdReq(conn)
+		req, err := rdReq(br)
 		if err != nil {
+			if errors.Is(err, io.EOF) {
+				return
+			}
+			if nerr, ok := err.(net.Error); ok && nerr.Timeout() {
+				return
+			}
 			if errors.Is(err, errTooLarge) {
+				conn.SetWriteDeadline(time.Now().Add(5 * time.Second))
 				writeResp(conn, 413, []byte("body too large"), "text/plain", false)
-				log.Println("POST", "/data", 413, 0)
+				return
 			}
 			return
 		}
 
-		keep := wr(conn, req)
+		keep := shouldKeepAlive(req)
+
+		conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+		keep = wr(conn, req) && keep
+
 		if !keep {
 			return
 		}
-
-		conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 	}
 }
