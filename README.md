@@ -30,6 +30,8 @@ It implements:
 
 The server achieves **~2000 RPS** and is designed to survive **100K concurrent requests** with proper kernel tuning.
 
+See **[test_scripts.md](docs/test_scripts.md)** for complete testing procedures.
+
 ---
 
 # 🛠 Setup & Run
