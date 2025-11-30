@@ -270,25 +270,25 @@ Load tested using **Locust**:
 flowchart TD
 
     subgraph Client
-        A[HTTP Client<br/>Browser / Curl / Load Tester]
+        A["HTTP Client\nBrowser / Curl / Load Tester"]
     end
 
     subgraph Network
-        B[TCP Listener<br/>(net.Listen)]
-        C[Connection Handler<br/>Goroutine per Conn]
+        B["TCP Listener\n(net.Listen)"]
+        C["Connection Handler\nGoroutine per Conn"]
     end
 
     subgraph Core
-        D[HTTP Request Parser<br/>req.go]
-        E[Router<br/>router.go]
-        F[Middleware Chain<br/>middleware.go]
-        G[Handlers<br/>handlers.go]
-        H[Response Writer<br/>resp.go]
+        D["HTTP Request Parser\nreq.go"]
+        E["Router\nrouter.go"]
+        F["Middleware Chain\nmiddleware.go"]
+        G["Handlers\nhandlers.go"]
+        H["Response Writer\nresp.go"]
     end
 
     subgraph Storage
-        I[In-Memory Store<br/>map[int]object]
-        J[Persistent Storage<br/>data.json]
+        I["In-Memory Store\nmap[int]object"]
+        J["Persistent Storage\ndata.json"]
     end
 
     A -->|TCP Connection| B
@@ -303,6 +303,7 @@ flowchart TD
 
     G --> H
     H -->|HTTP Response| A
+
 ```
 
 ---
