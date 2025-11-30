@@ -1,6 +1,8 @@
 # 🚀 Minimalist High‑Performance Go HTTP Server  
 ### **A Fully Custom, Framework‑Free HTTP/1.1 Server Built From Scratch**
 
+#### ⚠️ Disclaimer : Some parts of this codebase are AI generated (like README.md, test_scripts.md and some of the core files of the project). 
+
 ![Go Version](https://img.shields.io/badge/Go-1.22+-00ADD8?logo=go)
 ![Performance](https://img.shields.io/badge/Performance-2000%2B_RPS-brightgreen)
 ![Framework Free](https://img.shields.io/badge/Frameworks-None-success)
