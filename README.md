@@ -260,16 +260,7 @@ Load tested using **Locust**:
 - **Stable goroutine count**
 - **Stable memory usage**
 
-Graphs (place in `docs/graphs/`):
-
-### Total Requests Per Second  
 ![RPS](docs/graphs/trps.png)
-
-### Latency  
-![Latency](docs/graphs/rt.png)
-
-### User Ramp-up  
-![Users](docs/graphs/nu.png)
 
 ---
 
@@ -396,5 +387,3 @@ This project demonstrates mastery in:
 - Clean code structure  
 - Error recovery  
 - System resilience  
-
-This is **competition-winning**, **industry-level**, and **professor-impressing** work.
